@@ -1,21 +1,13 @@
 
 import React from "react";
-import { CartProvider } from "@/context/CartContext";
 import Home from "./Home";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import Layout from "@/components/Layout";
 
 const Index = () => {
   return (
-    <CartProvider>
-      <div className="flex flex-col min-h-screen">
-        <Header />
-        <main className="flex-grow">
-          <Home />
-        </main>
-        <Footer />
-      </div>
-    </CartProvider>
+    <Layout>
+      <Home />
+    </Layout>
   );
 };
 
