@@ -1,6 +1,6 @@
 
 import React from "react";
-import { WalletCard } from "@/components/WalletCard";
+import WalletCard from "@/components/WalletCard";
 import PageTransition from "@/components/PageTransition";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -46,7 +46,17 @@ const Wallet = () => {
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-1">
-                <WalletCard balance={balance} />
+                <WalletCard 
+                  balance={balance} 
+                  transactions={transactions.slice(0, 3).map(tx => ({
+                    id: tx.id.toString(),
+                    type: tx.type === "reload" ? "deposit" : "payment",
+                    amount: tx.amount,
+                    date: new Date(tx.date),
+                    description: tx.description
+                  }))} 
+                  onAddFunds={() => {}} 
+                />
                 
                 <div className="mt-6 space-y-4">
                   <h3 className="text-lg font-semibold mb-3">Add Funds</h3>
