@@ -10,6 +10,7 @@ import Pickup from "./pages/Pickup";
 import GiftCards from "./pages/GiftCards";
 import Wallet from "./pages/Wallet";
 import Cart from "./pages/Cart";
+import Products from "./pages/Products";
 import ProductDetails from "./pages/ProductDetails";
 import { CartProvider } from "./context/CartContext";
 
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/gift-cards" element={<GiftCards />} />
             <Route path="/wallet" element={<Wallet />} />
             <Route path="/cart" element={<Cart />} />
+            <Route path="/products" element={<Products />} />
             <Route path="/product/:productId" element={<ProductDetails />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

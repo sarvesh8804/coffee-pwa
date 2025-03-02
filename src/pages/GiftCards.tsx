@@ -21,7 +21,6 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import Layout from "@/components/Layout";
 
-// Sample gift card designs
 const giftCardDesigns = [
   {
     id: "design1",
@@ -40,7 +39,6 @@ const giftCardDesigns = [
   },
 ];
 
-// Sample denominations
 const denominations = [25, 50, 75, 100];
 
 const GiftCards = () => {
@@ -68,7 +66,6 @@ const GiftCards = () => {
     setIsSubmitting(true);
 
     try {
-      // Simulate API request
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
       const amount = customAmount ? parseFloat(customAmount) : selectedAmount;
@@ -78,7 +75,6 @@ const GiftCards = () => {
         description: `A $${amount.toFixed(2)} gift card has been sent to ${recipientEmail}`,
       });
 
-      // Reset form
       setSelectedDesign(giftCardDesigns[0]);
       setSelectedAmount(denominations[0]);
       setCustomAmount("");

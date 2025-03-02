@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Coffee, Gift, Wallet, ShoppingBag, Calendar, Menu, X } from "lucide-react";
+import { Coffee, Gift, Wallet, ShoppingBag, Calendar, Menu, X, ShoppingBasket } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ const Header = () => {
 
   const navItems = [
     { name: "Home", path: "/", icon: <Coffee className="h-4 w-4" /> },
+    { name: "Products", path: "/products", icon: <ShoppingBasket className="h-4 w-4" /> },
     { name: "Pickup", path: "/pickup", icon: <Calendar className="h-4 w-4" /> },
     { name: "Gift Cards", path: "/gift-cards", icon: <Gift className="h-4 w-4" /> },
     { name: "Wallet", path: "/wallet", icon: <Wallet className="h-4 w-4" /> },
