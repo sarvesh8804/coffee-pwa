@@ -139,6 +139,18 @@ const Header = () => {
                   <span>{item.name}</span>
                 </Link>
               ))}
+              <Link
+                to="/cart"
+                className={cn(
+                  "p-3 rounded-lg text-base flex items-center space-x-3 transition-all",
+                  location.pathname === "/cart"
+                    ? "bg-cream text-coffee-dark font-medium"
+                    : "text-coffee-dark/80 hover:bg-cream/50"
+                )}
+              >
+                <ShoppingBag className="h-4 w-4" />
+                <span>Cart{itemCount > 0 && ` (${itemCount})`}</span>
+              </Link>
             </nav>
           </motion.div>
         )}

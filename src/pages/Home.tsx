@@ -2,10 +2,12 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Coffee, Gift, Wallet, Calendar } from "lucide-react";
+import { Coffee, Gift, Wallet, Calendar, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PageTransition from "@/components/PageTransition";
 import { cn } from "@/lib/utils";
+import { useCart } from "@/context/CartContext";
+import { useToast } from "@/hooks/use-toast";
 
 const features = [
   {
@@ -59,6 +61,17 @@ const products = [
 ];
 
 const Home = () => {
+  const { addToCart } = useCart();
+  const { toast } = useToast();
+
+  const handleAddToCart = (product) => {
+    addToCart(product);
+    toast({
+      title: "Added to cart",
+      description: `${product.name} added to your cart`,
+    });
+  };
+
   return (
     <PageTransition>
       <div className="space-y-20">
@@ -213,17 +226,21 @@ const Home = () => {
                   transition={{ duration: 0.5, delay: index * 0.1 + 0.2 }}
                   className="group rounded-xl overflow-hidden border border-cream-dark/30 bg-white shadow-sm card-hover"
                 >
-                  <div className="aspect-square overflow-hidden">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  </div>
+                  <Link to={`/product/${product.id}`}>
+                    <div className="aspect-square overflow-hidden">
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    </div>
+                  </Link>
                   <div className="p-6">
-                    <h3 className="text-lg font-display font-medium text-coffee-dark mb-1">
-                      {product.name}
-                    </h3>
+                    <Link to={`/product/${product.id}`}>
+                      <h3 className="text-lg font-display font-medium text-coffee-dark mb-1 hover:text-coffee transition-colors">
+                        {product.name}
+                      </h3>
+                    </Link>
                     <p className="text-sm text-muted-foreground mb-3">
                       {product.description}
                     </p>
@@ -234,7 +251,9 @@ const Home = () => {
                       <Button
                         size="sm"
                         className="bg-coffee hover:bg-coffee-dark text-white"
+                        onClick={() => handleAddToCart(product)}
                       >
+                        <ShoppingBag className="mr-1 h-4 w-4" />
                         Add to Cart
                       </Button>
                     </div>

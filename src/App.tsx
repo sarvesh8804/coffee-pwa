@@ -9,6 +9,8 @@ import NotFound from "./pages/NotFound";
 import Pickup from "./pages/Pickup";
 import GiftCards from "./pages/GiftCards";
 import Wallet from "./pages/Wallet";
+import Cart from "./pages/Cart";
+import ProductDetails from "./pages/ProductDetails";
 import { CartProvider } from "./context/CartContext";
 
 const queryClient = new QueryClient();
@@ -25,6 +27,8 @@ const App = () => (
             <Route path="/pickup" element={<Pickup />} />
             <Route path="/gift-cards" element={<GiftCards />} />
             <Route path="/wallet" element={<Wallet />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/product/:productId" element={<ProductDetails />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
