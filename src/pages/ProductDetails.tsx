@@ -1,32 +1,22 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
 import { Button } from "@/components/ui/button";
-import { MinusCircle, PlusCircle, ShoppingBag } from "lucide-react";
+import { MinusCircle, PlusCircle, ShoppingBag, Loader2 } from "lucide-react";
 import PageTransition from "@/components/PageTransition";
 import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
+import { useProduct } from "@/hooks/useProducts";
 
 const ProductDetails = () => {
   const { productId } = useParams<{ productId: string }>();
   const navigate = useNavigate();
-  const { addToCart, products } = useCart();
+  const { addToCart } = useCart();
   const { toast } = useToast();
   const [quantity, setQuantity] = useState(1);
-  const [product, setProduct] = useState<any | null>(null);
   
-  useEffect(() => {
-    // Find the product based on the ID from the URL
-    const foundProduct = products.find(p => p.id === productId);
-    
-    if (foundProduct) {
-      setProduct(foundProduct);
-    } else {
-      // If product not found, navigate to 404
-      navigate("/not-found");
-    }
-  }, [productId, navigate, products]);
+  const { data: product, isLoading, error } = useProduct(productId);
   
   const increaseQuantity = () => setQuantity(prev => prev + 1);
   const decreaseQuantity = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
@@ -41,11 +31,27 @@ const ProductDetails = () => {
     }
   };
   
-  if (!product) {
+  if (isLoading) {
     return (
       <Layout>
         <div className="flex items-center justify-center py-16">
-          <div className="animate-pulse">Loading...</div>
+          <Loader2 className="h-8 w-8 text-coffee animate-spin" />
+        </div>
+      </Layout>
+    );
+  }
+  
+  if (error || !product) {
+    return (
+      <Layout>
+        <div className="container mx-auto py-16 px-4 text-center">
+          <h2 className="text-2xl font-display text-coffee-dark mb-4">Product not found</h2>
+          <p className="text-muted-foreground mb-8">
+            The product you're looking for doesn't exist or has been removed.
+          </p>
+          <Button onClick={() => navigate("/products")} className="bg-coffee hover:bg-coffee-dark">
+            Back to Products
+          </Button>
         </div>
       </Layout>
     );
