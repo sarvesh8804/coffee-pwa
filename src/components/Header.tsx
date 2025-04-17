@@ -1,9 +1,16 @@
+
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Coffee, Gift, Wallet, ShoppingBag, Calendar, Menu, X, ShoppingBasket, LogIn, LogOut } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Coffee, Gift, Wallet, ShoppingBag, Calendar, Menu, X, ShoppingBasket, LogIn, LogOut, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -17,6 +24,7 @@ const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const navItems = [
     { name: "Home", path: "/", icon: <Coffee className="h-4 w-4" /> },
@@ -141,15 +149,30 @@ const Header = () => {
                   )}
                 </Button>
               </Link>
+              
               {user ? (
-                <Button
-                  variant="ghost"
-                  onClick={handleSignOut}
-                  className="ml-2 text-coffee-dark"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Logout
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="ml-2 text-coffee-dark"
+                    >
+                      <User className="mr-2 h-4 w-4" />
+                      {user.user_metadata.first_name || 'Account'}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => navigate('/wallet')}>
+                      My Wallet
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/pickup')}>
+                      My Orders
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleSignOut}>
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               ) : (
                 <Link to="/auth" className="ml-2">
                   <Button
@@ -203,6 +226,17 @@ const Header = () => {
                 <ShoppingBag className="h-4 w-4" />
                 <span>Cart{itemCount > 0 && ` (${itemCount})`}</span>
               </Link>
+              
+              {user && (
+                <Button
+                  variant="ghost"
+                  onClick={handleSignOut}
+                  className="p-3 rounded-lg text-base flex items-center space-x-3 justify-start text-coffee-dark/80 hover:bg-cream/50"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Sign Out</span>
+                </Button>
+              )}
             </nav>
           </motion.div>
         )}
