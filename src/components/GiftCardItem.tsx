@@ -65,6 +65,11 @@ const GiftCardItem: React.FC<GiftCardProps> = ({
     );
   }
 
+  // Format the code to display in groups of 4 for readability
+  const formattedCode = code.includes('-') 
+    ? code 
+    : code.match(/.{1,4}/g)?.join('-') || code;
+
   return (
     <motion.div
       whileHover={{ y: -5 }}
@@ -114,7 +119,7 @@ const GiftCardItem: React.FC<GiftCardProps> = ({
 
         <div className="flex items-center space-x-2 mb-4">
           <p className="text-sm font-mono px-3 py-1.5 bg-cream-dark/20 rounded-md flex-1 truncate">
-            {code}
+            {formattedCode}
           </p>
           <Button
             variant="ghost"

@@ -1,7 +1,7 @@
+
 import React, { useState } from "react";
 import PageTransition from "@/components/PageTransition";
 import GiftCardItem from "@/components/GiftCardItem";
-import { useCart } from "@/context/CartContext";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +20,7 @@ import { Calendar, Gift, UserRound, Mail, Send, Check, Coffee } from "lucide-rea
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import Layout from "@/components/Layout";
+import { useGiftCards, GiftCard } from "@/hooks/useGiftCards";
 
 const giftCardDesigns = [
   {
@@ -42,7 +43,6 @@ const giftCardDesigns = [
 const denominations = [25, 50, 75, 100];
 
 const GiftCards = () => {
-  const { wallet } = useCart();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("purchase");
   const [selectedDesign, setSelectedDesign] = useState(giftCardDesigns[0]);
@@ -51,7 +51,16 @@ const GiftCards = () => {
   const [recipientName, setRecipientName] = useState("");
   const [recipientEmail, setRecipientEmail] = useState("");
   const [message, setMessage] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [redeemCode, setRedeemCode] = useState("");
+  
+  const { 
+    giftCards,
+    createGiftCard,
+    isCreating,
+    redeemGiftCard,
+    isRedeeming,
+    isLoading 
+  } = useGiftCards();
 
   const handlePurchase = async () => {
     if (!recipientName || !recipientEmail) {
@@ -63,33 +72,45 @@ const GiftCards = () => {
       return;
     }
 
-    setIsSubmitting(true);
-
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
       const amount = customAmount ? parseFloat(customAmount) : selectedAmount;
-
-      toast({
-        title: "Gift card sent!",
-        description: `A $${amount.toFixed(2)} gift card has been sent to ${recipientEmail}`,
+      
+      // Call the createGiftCard mutation from useGiftCards
+      createGiftCard({
+        recipientEmail,
+        amount,
+        message,
+        design: selectedDesign.id,
       });
 
+      // Reset form after successful submission
       setSelectedDesign(giftCardDesigns[0]);
       setSelectedAmount(denominations[0]);
       setCustomAmount("");
       setRecipientName("");
       setRecipientEmail("");
       setMessage("");
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Something went wrong",
-        description: "Unable to send gift card. Please try again.",
+        description: error.message || "Unable to send gift card. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
     }
+  };
+  
+  const handleRedeem = () => {
+    if (!redeemCode.trim()) {
+      toast({
+        title: "Missing code",
+        description: "Please enter a gift card code",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    redeemGiftCard(redeemCode);
+    setRedeemCode("");
   };
 
   return (
@@ -339,14 +360,14 @@ const GiftCards = () => {
                       <Button
                         onClick={handlePurchase}
                         disabled={
-                          isSubmitting ||
+                          isCreating ||
                           (!selectedAmount && !customAmount) ||
                           !recipientName ||
                           !recipientEmail
                         }
                         className="w-full bg-coffee hover:bg-coffee-dark text-white"
                       >
-                        {isSubmitting ? (
+                        {isCreating ? (
                           <span className="animate-pulse-soft">Sending...</span>
                         ) : (
                           <>
@@ -361,7 +382,11 @@ const GiftCards = () => {
             </TabsContent>
 
             <TabsContent value="manage" className="mt-6">
-              {wallet.giftCards.length === 0 ? (
+              {isLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-coffee"></div>
+                </div>
+              ) : giftCards.length === 0 ? (
                 <div className="text-center py-12 bg-cream/50 rounded-lg border border-cream-dark/20">
                   <Gift className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-xl font-display font-medium text-coffee-dark mb-2">
@@ -381,7 +406,7 @@ const GiftCards = () => {
               ) : (
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {wallet.giftCards.map((card) => (
+                    {giftCards.map((card: GiftCard) => (
                       <GiftCardItem
                         key={card.id}
                         id={card.id}
@@ -390,9 +415,6 @@ const GiftCards = () => {
                         balance={card.balance}
                         createdAt={new Date(card.createdAt)}
                         expiresAt={new Date(card.expiresAt)}
-                        onUse={() => {
-                          /* Handle card use */
-                        }}
                       />
                     ))}
                   </div>
@@ -419,10 +441,20 @@ const GiftCards = () => {
                     <Input
                       id="giftCardCode"
                       placeholder="Enter your gift card code"
+                      value={redeemCode}
+                      onChange={(e) => setRedeemCode(e.target.value)}
                     />
                   </div>
-                  <Button className="w-full bg-coffee hover:bg-coffee-dark text-white">
-                    Redeem Card
+                  <Button 
+                    className="w-full bg-coffee hover:bg-coffee-dark text-white"
+                    onClick={handleRedeem}
+                    disabled={isRedeeming || !redeemCode.trim()}
+                  >
+                    {isRedeeming ? (
+                      <span className="animate-pulse-soft">Redeeming...</span>
+                    ) : (
+                      "Redeem Card"
+                    )}
                   </Button>
                 </div>
               </div>

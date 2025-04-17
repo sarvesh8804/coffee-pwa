@@ -68,8 +68,11 @@ export type Database = {
           balance: number
           code: string
           created_at: string
+          design: string | null
           expires_at: string
           id: string
+          message: string | null
+          recipient_email: string | null
           user_id: string | null
         }
         Insert: {
@@ -77,8 +80,11 @@ export type Database = {
           balance: number
           code: string
           created_at?: string
+          design?: string | null
           expires_at: string
           id?: string
+          message?: string | null
+          recipient_email?: string | null
           user_id?: string | null
         }
         Update: {
@@ -86,8 +92,11 @@ export type Database = {
           balance?: number
           code?: string
           created_at?: string
+          design?: string | null
           expires_at?: string
           id?: string
+          message?: string | null
+          recipient_email?: string | null
           user_id?: string | null
         }
         Relationships: []

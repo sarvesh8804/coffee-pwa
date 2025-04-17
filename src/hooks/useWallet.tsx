@@ -62,14 +62,14 @@ export const useWallet = () => {
 
   // Mutation to add funds
   const addFundsMutation = useMutation({
-    mutationFn: async (amount: number) => {
+    mutationFn: async (amount: number, description: string = 'Wallet Reload') => {
       if (!user) throw new Error('User not authenticated');
       
       const newTransaction = {
         user_id: user.id,
         amount: amount,
         type: 'reload', // Using 'reload' in the database
-        description: 'Wallet Reload'
+        description: description
       };
       
       const { data, error } = await supabase
@@ -103,7 +103,7 @@ export const useWallet = () => {
     transactions,
     isLoading,
     error,
-    addFunds: (amount: number) => addFundsMutation.mutate(amount),
+    addFunds: (amount: number, description?: string) => addFundsMutation.mutate(amount, description),
     isAddingFunds: addFundsMutation.isPending
   };
 };
