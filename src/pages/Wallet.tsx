@@ -1,3 +1,4 @@
+
 import React from "react";
 import WalletCard from "@/components/WalletCard";
 import PageTransition from "@/components/PageTransition";
@@ -5,31 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
+import { useWallet } from "@/hooks/useWallet";
+import { format } from "date-fns";
 
 const Wallet = () => {
   const { toast } = useToast();
-  const [balance, setBalance] = React.useState(25.50); // Default starting balance
-  const [transactions, setTransactions] = React.useState([
-    { id: 1, date: "2023-05-15", amount: 5.75, type: "purchase", description: "Cappuccino" },
-    { id: 2, date: "2023-05-10", amount: 20.00, type: "reload", description: "Wallet Reload" },
-    { id: 3, date: "2023-05-08", amount: 4.25, type: "purchase", description: "Croissant & Tea" },
-  ]);
+  const { balance, transactions, addFunds, isLoading, isAddingFunds } = useWallet();
 
   const handleAddFunds = (amount: number) => {
-    setBalance(prev => prev + amount);
-    const newTransaction = {
-      id: transactions.length + 1,
-      date: new Date().toISOString().split('T')[0],
-      amount: amount,
-      type: "reload",
-      description: "Wallet Reload"
-    };
-    setTransactions([newTransaction, ...transactions]);
-    
-    toast({
-      title: "Funds Added",
-      description: `$${amount.toFixed(2)} has been added to your wallet.`,
-    });
+    addFunds(amount);
   };
 
   return (
@@ -43,14 +28,8 @@ const Wallet = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-1">
               <WalletCard 
-                balance={balance} 
-                transactions={transactions.slice(0, 3).map(tx => ({
-                  id: tx.id.toString(),
-                  type: tx.type === "reload" ? "deposit" : "payment",
-                  amount: tx.amount,
-                  date: new Date(tx.date),
-                  description: tx.description
-                }))} 
+                balance={balance || 0} 
+                transactions={transactions.slice(0, 3)} 
                 onAddFunds={() => {}} 
               />
               
@@ -63,6 +42,7 @@ const Wallet = () => {
                       variant="outline" 
                       className="border-coffee hover:bg-coffee hover:text-white"
                       onClick={() => handleAddFunds(amount)}
+                      disabled={isAddingFunds}
                     >
                       ${amount}
                     </Button>
@@ -71,6 +51,7 @@ const Wallet = () => {
                 <Button 
                   className="w-full mt-2 bg-coffee hover:bg-coffee-dark"
                   onClick={() => handleAddFunds(50)}
+                  disabled={isAddingFunds}
                 >
                   <Plus className="mr-2 h-4 w-4" /> Add $50
                 </Button>
@@ -81,7 +62,11 @@ const Wallet = () => {
               <div className="bg-white p-6 rounded-lg shadow-sm">
                 <h3 className="text-lg font-semibold mb-4">Recent Transactions</h3>
                 
-                {transactions.length > 0 ? (
+                {isLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-coffee"></div>
+                  </div>
+                ) : transactions.length > 0 ? (
                   <div className="space-y-4">
                     {transactions.map((tx) => (
                       <div 
@@ -90,10 +75,12 @@ const Wallet = () => {
                       >
                         <div>
                           <p className="font-medium">{tx.description}</p>
-                          <p className="text-sm text-gray-500">{tx.date}</p>
+                          <p className="text-sm text-gray-500">
+                            {format(tx.date, 'MMM d, yyyy')}
+                          </p>
                         </div>
-                        <div className={`font-medium ${tx.type === 'reload' ? 'text-green-600' : 'text-red-600'}`}>
-                          {tx.type === 'reload' ? '+' : '-'}${tx.amount.toFixed(2)}
+                        <div className={`font-medium ${tx.type === 'deposit' ? 'text-green-600' : 'text-red-600'}`}>
+                          {tx.type === 'deposit' ? '+' : '-'}${tx.amount.toFixed(2)}
                         </div>
                       </div>
                     ))}

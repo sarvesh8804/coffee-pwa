@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -15,7 +14,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import Layout from '@/components/Layout';
 import { Coffee } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -26,13 +25,17 @@ const Auth = () => {
   const { signIn, signUp, loading, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get the return URL from location state
+  const from = (location.state as { from?: string })?.from || '/';
 
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      navigate('/');
+      navigate(from, { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, navigate, from]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

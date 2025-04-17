@@ -15,6 +15,7 @@ import ProductDetails from "./pages/ProductDetails";
 import Auth from "./pages/Auth";
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./hooks/useAuth";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -29,12 +30,15 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/pickup" element={<Pickup />} />
-              <Route path="/gift-cards" element={<GiftCards />} />
-              <Route path="/wallet" element={<Wallet />} />
-              <Route path="/cart" element={<Cart />} />
               <Route path="/products" element={<Products />} />
               <Route path="/product/:productId" element={<ProductDetails />} />
+              
+              {/* Protected Routes */}
+              <Route path="/pickup" element={<ProtectedRoute><Pickup /></ProtectedRoute>} />
+              <Route path="/gift-cards" element={<ProtectedRoute><GiftCards /></ProtectedRoute>} />
+              <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
+              <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
+              
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

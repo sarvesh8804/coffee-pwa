@@ -1,20 +1,27 @@
+
 import React from "react";
 import PageTransition from "@/components/PageTransition";
 import PickupScheduler from "@/components/PickupScheduler";
-import { useCart } from "@/context/CartContext";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Calendar, Coffee, Check, Clock, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Layout from "@/components/Layout";
+import { usePickups } from "@/hooks/usePickups";
 
 const Pickup = () => {
-  const { scheduledPickups } = useCart();
+  const { pickups, isLoading, cancelPickup } = usePickups();
 
-  const upcomingPickups = scheduledPickups.filter(
+  const upcomingPickups = pickups.filter(
     (pickup) => pickup.status !== "completed" && pickup.status !== "cancelled"
   );
+
+  const handleCancelPickup = (pickupId: string) => {
+    if (window.confirm("Are you sure you want to cancel this pickup?")) {
+      cancelPickup(pickupId);
+    }
+  };
 
   return (
     <Layout>
@@ -39,7 +46,11 @@ const Pickup = () => {
             </p>
           </div>
 
-          {upcomingPickups.length > 0 && (
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-coffee"></div>
+            </div>
+          ) : upcomingPickups.length > 0 && (
             <div className="mb-16">
               <h3 className="text-xl font-display font-medium text-coffee-dark mb-6">
                 Upcoming Pickups
@@ -114,9 +125,7 @@ const Pickup = () => {
                           variant="ghost"
                           size="sm"
                           className="text-muted-foreground hover:text-destructive"
-                          onClick={() => {
-                            /* Implement cancel functionality */
-                          }}
+                          onClick={() => handleCancelPickup(pickup.id)}
                         >
                           Cancel
                         </Button>
