@@ -2,6 +2,7 @@
 import React, { createContext, useContext } from "react";
 import { useCartData, CartItem } from "@/hooks/useCartData";
 import { Product } from "@/hooks/useProducts";
+import { usePickups } from "@/hooks/usePickups";
 
 // Define the shape of our cart context
 type CartContextType = {
@@ -13,6 +14,7 @@ type CartContextType = {
   cartTotal: number;
   itemCount: number;
   loading: boolean;
+  schedulePickup: (date: Date, time: string, items: CartItem[]) => void;
   scheduledPickups: any[];  // Keep this for backward compatibility
   wallet: {  // Keep this for backward compatibility
     balance: number;
@@ -35,6 +37,23 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     cartTotal,
     itemCount
   } = useCartData();
+  
+  const { createPickup } = usePickups();
+
+  // Implementation of schedulePickup
+  const schedulePickup = (date: Date, time: string, items: CartItem[]) => {
+    // Format date to string format expected by the API
+    const formattedDate = date.toISOString().split('T')[0];
+    
+    // Convert CartItem[] to PickupItem[] format
+    const pickupItems = items.map(item => ({
+      product: item.product,
+      quantity: item.quantity
+    }));
+    
+    // Call the createPickup function from usePickups
+    createPickup({ date: formattedDate, time, items: pickupItems });
+  };
 
   // For backward compatibility until we implement these features properly
   const scheduledPickups: any[] = [];
@@ -54,6 +73,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         cartTotal,
         itemCount,
         loading,
+        schedulePickup,
         scheduledPickups,
         wallet
       }}

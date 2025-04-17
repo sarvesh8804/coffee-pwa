@@ -8,7 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 export type WalletTransaction = {
   id: string;
   amount: number;
-  type: "deposit" | "payment"; // "deposit" for reload, "payment" for purchase
+  type: "deposit" | "payment"; // Strict union type for transaction types
   description: string;
   date: Date;
 };
@@ -29,14 +29,14 @@ export const useWallet = () => {
 
     if (error) throw error;
 
-    // Convert the data to the expected format
+    // Convert the data to the expected format with strict typing
     return data.map(tx => ({
       id: tx.id,
       amount: Number(tx.amount),
-      type: tx.type === 'reload' ? 'deposit' : 'payment',
+      type: tx.type === 'reload' ? 'deposit' as const : 'payment' as const, // Ensure correct type mapping
       description: tx.description,
       date: new Date(tx.created_at)
-    }));
+    })) as WalletTransaction[];
   };
 
   // Calculate balance from transactions
@@ -68,7 +68,7 @@ export const useWallet = () => {
       const newTransaction = {
         user_id: user.id,
         amount: amount,
-        type: 'reload',
+        type: 'reload', // Using 'reload' in the database
         description: 'Wallet Reload'
       };
       

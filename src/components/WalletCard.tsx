@@ -5,18 +5,11 @@ import { Wallet, Plus, ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-
-interface Transaction {
-  id: string;
-  type: "deposit" | "payment";
-  amount: number;
-  date: Date;
-  description: string;
-}
+import { WalletTransaction } from "@/hooks/useWallet";
 
 interface WalletCardProps {
   balance: number;
-  transactions: Transaction[];
+  transactions: WalletTransaction[];
   onAddFunds: () => void;
 }
 
