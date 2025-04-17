@@ -1,13 +1,13 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Coffee, Gift, Wallet, ShoppingBag, Calendar, Menu, X, ShoppingBasket } from "lucide-react";
+import { Coffee, Gift, Wallet, ShoppingBag, Calendar, Menu, X, ShoppingBasket, LogIn, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/hooks/useAuth";
 
 const Header = () => {
   const location = useLocation();
@@ -16,6 +16,7 @@ const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { toast } = useToast();
+  const { user, signOut } = useAuth();
 
   const navItems = [
     { name: "Home", path: "/", icon: <Coffee className="h-4 w-4" /> },
@@ -35,9 +36,19 @@ const Header = () => {
   }, []);
 
   useEffect(() => {
-    // Close mobile menu when navigating
     setMobileMenuOpen(false);
   }, [location.pathname]);
+
+  const handleSignOut = async () => {
+    const { error } = await signOut();
+    if (error) {
+      toast({
+        title: 'Logout Error',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  };
 
   const headerClasses = cn(
     "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-out-expo w-full",
@@ -68,6 +79,26 @@ const Header = () => {
                   </span>
                 )}
               </Link>
+              {user ? (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={handleSignOut}
+                  className="text-coffee-dark"
+                >
+                  <LogOut className="h-5 w-5" />
+                </Button>
+              ) : (
+                <Link to="/auth">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-coffee-dark"
+                  >
+                    <LogIn className="h-5 w-5" />
+                  </Button>
+                </Link>
+              )}
               <Button
                 variant="ghost"
                 size="icon"
@@ -110,6 +141,26 @@ const Header = () => {
                   )}
                 </Button>
               </Link>
+              {user ? (
+                <Button
+                  variant="ghost"
+                  onClick={handleSignOut}
+                  className="ml-2 text-coffee-dark"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </Button>
+              ) : (
+                <Link to="/auth" className="ml-2">
+                  <Button
+                    variant="ghost"
+                    className="text-coffee-dark"
+                  >
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Login
+                  </Button>
+                </Link>
+              )}
             </nav>
           )}
         </div>
@@ -157,7 +208,6 @@ const Header = () => {
         )}
       </AnimatePresence>
 
-      {/* Spacer to prevent content from being hidden under fixed header */}
       <div className={isScrolled ? "h-16" : "h-20"} />
     </>
   );

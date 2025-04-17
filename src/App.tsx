@@ -12,6 +12,7 @@ import Wallet from "./pages/Wallet";
 import Cart from "./pages/Cart";
 import Products from "./pages/Products";
 import ProductDetails from "./pages/ProductDetails";
+import Auth from "./pages/Auth";
 import { CartProvider } from "./context/CartContext";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
             <Route path="/pickup" element={<Pickup />} />
             <Route path="/gift-cards" element={<GiftCards />} />
             <Route path="/wallet" element={<Wallet />} />
