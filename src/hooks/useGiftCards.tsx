@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,12 +15,10 @@ export type GiftCard = {
   message?: string;
 };
 
-// Function to generate a random 16-digit card code
 const generateCardCode = () => {
   const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   let code = '';
   
-  // Generate 4 groups of 4 characters separated by dashes
   for (let group = 0; group < 4; group++) {
     for (let i = 0; i < 4; i++) {
       code += chars[Math.floor(Math.random() * chars.length)];
@@ -36,9 +33,8 @@ export const useGiftCards = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { addFunds } = useWallet();
+  const { addFunds, makePayment } = useWallet();
   
-  // Fetch gift cards for the current user
   const { data: giftCards = [], isLoading } = useQuery({
     queryKey: ['giftCards', user?.id],
     queryFn: async () => {
@@ -65,7 +61,6 @@ export const useGiftCards = () => {
     enabled: !!user
   });
   
-  // Create a new gift card
   const createGiftCardMutation = useMutation({
     mutationFn: async ({ 
       recipientEmail, 
@@ -80,32 +75,36 @@ export const useGiftCards = () => {
     }) => {
       if (!user) throw new Error('User not authenticated');
       
-      // Generate a 16-digit code (format: XXXX-XXXX-XXXX-XXXX)
-      const code = generateCardCode();
-      
-      // Set expiry to 1 year from now
-      const expiresAt = new Date();
-      expiresAt.setFullYear(expiresAt.getFullYear() + 1);
-      
-      const newGiftCard = {
-        user_id: user.id,
-        code,
-        amount,
-        balance: amount, // Initially, balance equals amount
-        expires_at: expiresAt.toISOString(),
-        recipient_email: recipientEmail,
-        message: message || '',
-        design: design || ''
-      };
-      
-      const { data, error } = await supabase
-        .from('gift_cards')
-        .insert(newGiftCard)
-        .select();
+      try {
+        await makePayment(amount, `Gift Card Purchase for ${recipientEmail}`);
         
-      if (error) throw error;
-      
-      return data[0];
+        const code = generateCardCode();
+        
+        const expiresAt = new Date();
+        expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+        
+        const newGiftCard = {
+          user_id: user.id,
+          code,
+          amount,
+          balance: amount,
+          expires_at: expiresAt.toISOString(),
+          recipient_email: recipientEmail,
+          message: message || '',
+          design: design || ''
+        };
+        
+        const { data, error } = await supabase
+          .from('gift_cards')
+          .insert(newGiftCard)
+          .select();
+          
+        if (error) throw error;
+        
+        return data[0];
+      } catch (error: any) {
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['giftCards', user?.id] });
@@ -123,12 +122,10 @@ export const useGiftCards = () => {
     }
   });
   
-  // Redeem a gift card
   const redeemGiftCardMutation = useMutation({
     mutationFn: async (code: string) => {
       if (!user) throw new Error('User not authenticated');
       
-      // First, check if the gift card exists and has balance
       const { data: giftCard, error: findError } = await supabase
         .from('gift_cards')
         .select('*')
@@ -141,8 +138,6 @@ export const useGiftCards = () => {
       if (Number(giftCard.balance) <= 0) throw new Error('Gift card has no remaining balance');
       if (new Date(giftCard.expires_at) < new Date()) throw new Error('Gift card has expired');
       
-      // Begin a transaction to ensure both operations are atomic
-      // 1. Transfer ownership of gift card to current user
       const { error: updateError } = await supabase
         .from('gift_cards')
         .update({ user_id: user.id })
@@ -150,7 +145,6 @@ export const useGiftCards = () => {
         
       if (updateError) throw updateError;
       
-      // 2. Add the gift card balance to the user's wallet
       await addFunds(Number(giftCard.balance), `Gift Card Redemption: ${code}`);
       
       return giftCard;

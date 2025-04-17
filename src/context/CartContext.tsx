@@ -56,7 +56,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }));
     
     // Call the createPickup function from usePickups
-    createPickup({ date: formattedDate, time, items: pickupItems });
+    // This will now handle the wallet payment internally
+    return createPickup({ date: formattedDate, time, items: pickupItems });
   };
 
   // For backward compatibility until we implement these features properly

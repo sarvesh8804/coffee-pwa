@@ -1,9 +1,9 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Product } from '@/hooks/useProducts';
+import { useWallet } from '@/hooks/useWallet';
 
 export type PickupItem = {
   product: Product;
@@ -23,14 +23,13 @@ export const usePickups = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { makePayment } = useWallet();
   
-  // Fetch pickups for the current user
   const { data: pickups = [], isLoading } = useQuery({
     queryKey: ['pickups', user?.id],
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
       
-      // First get all the user's pickups
       const { data: pickupsData, error: pickupsError } = await supabase
         .from('pickups')
         .select('*')
@@ -38,7 +37,6 @@ export const usePickups = () => {
         
       if (pickupsError) throw pickupsError;
       
-      // Fetch the items for each pickup
       const pickupsWithItems = await Promise.all(
         pickupsData.map(async (pickup) => {
           const { data: itemsData, error: itemsError } = await supabase
@@ -55,12 +53,11 @@ export const usePickups = () => {
             
           if (itemsError) throw itemsError;
           
-          // Transform the data
           const items = itemsData.map(item => ({
             product: {
               id: item.products.id,
               name: item.products.name,
-              price: Number(item.price), // Using the price at the time of order
+              price: Number(item.price),
               image: item.products.image,
               description: item.products.description,
               category: item.products.categories?.name || "Unknown",
@@ -89,7 +86,6 @@ export const usePickups = () => {
     enabled: !!user
   });
   
-  // Create a new pickup
   const createPickupMutation = useMutation({
     mutationFn: async ({ 
       date, 
@@ -103,39 +99,42 @@ export const usePickups = () => {
       if (!user) throw new Error('User not authenticated');
       if (items.length === 0) throw new Error('No items in pickup');
       
-      // Calculate total
       const total = items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
       
-      // Create the pickup
-      const { data: pickupData, error: pickupError } = await supabase
-        .from('pickups')
-        .insert({
-          user_id: user.id,
-          pickup_date: date,
-          pickup_time: time,
-          total: total,
-          status: 'pending'
-        })
-        .select()
-        .single();
+      try {
+        await makePayment(total, `Coffee Pickup Scheduled for ${date} at ${time}`);
         
-      if (pickupError) throw pickupError;
-      
-      // Add the items
-      const pickupItems = items.map(item => ({
-        pickup_id: pickupData.id,
-        product_id: item.product.id,
-        quantity: item.quantity,
-        price: item.product.price // Store the price at time of order
-      }));
-      
-      const { error: itemsError } = await supabase
-        .from('pickup_items')
-        .insert(pickupItems);
+        const { data: pickupData, error: pickupError } = await supabase
+          .from('pickups')
+          .insert({
+            user_id: user.id,
+            pickup_date: date,
+            pickup_time: time,
+            total: total,
+            status: 'pending'
+          })
+          .select()
+          .single();
+          
+        if (pickupError) throw pickupError;
         
-      if (itemsError) throw itemsError;
-      
-      return pickupData;
+        const pickupItems = items.map(item => ({
+          pickup_id: pickupData.id,
+          product_id: item.product.id,
+          quantity: item.quantity,
+          price: item.product.price
+        }));
+        
+        const { error: itemsError } = await supabase
+          .from('pickup_items')
+          .insert(pickupItems);
+          
+        if (itemsError) throw itemsError;
+        
+        return pickupData;
+      } catch (error: any) {
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pickups', user?.id] });
@@ -153,7 +152,6 @@ export const usePickups = () => {
     }
   });
   
-  // Cancel a pickup
   const cancelPickupMutation = useMutation({
     mutationFn: async (pickupId: string) => {
       if (!user) throw new Error('User not authenticated');
@@ -162,7 +160,7 @@ export const usePickups = () => {
         .from('pickups')
         .update({ status: 'cancelled' })
         .eq('id', pickupId)
-        .eq('user_id', user.id) // Ensure the user owns this pickup
+        .eq('user_id', user.id)
         .select();
         
       if (error) throw error;

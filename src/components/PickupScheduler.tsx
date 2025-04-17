@@ -1,6 +1,5 @@
-
 import React, { useState } from "react";
-import { Calendar as CalendarIcon, Clock, Coffee } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Coffee, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -40,8 +39,9 @@ const PickupScheduler: React.FC = () => {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [insufficientFunds, setInsufficientFunds] = useState(false);
   const { toast } = useToast();
-  const { cartItems, cartTotal, schedulePickup, clearCart } = useCart();
+  const { cartItems, cartTotal, schedulePickup, clearCart, wallet } = useCart();
 
   const handleSchedulePickup = async () => {
     if (!date || !selectedTimeSlot) {
@@ -61,14 +61,24 @@ const PickupScheduler: React.FC = () => {
       });
       return;
     }
+    
+    if (wallet.balance < cartTotal) {
+      setInsufficientFunds(true);
+      toast({
+        title: "Insufficient funds",
+        description: "Please add more funds to your wallet",
+        variant: "destructive",
+      });
+      return;
+    } else {
+      setInsufficientFunds(false);
+    }
 
     setIsSubmitting(true);
 
     try {
-      // Simulate API request
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
       schedulePickup(date, selectedTimeSlot, cartItems);
+      
       clearCart();
 
       toast({
@@ -76,13 +86,12 @@ const PickupScheduler: React.FC = () => {
         description: `Your order will be ready on ${format(date, "MMMM d")} at ${selectedTimeSlot}`,
       });
 
-      // Reset form
       setDate(undefined);
       setSelectedTimeSlot(null);
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Something went wrong",
-        description: "Unable to schedule pickup. Please try again.",
+        description: error.message || "Unable to schedule pickup. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -167,10 +176,22 @@ const PickupScheduler: React.FC = () => {
             </div>
           </div>
 
+          {insufficientFunds && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md flex items-center text-red-700 text-sm">
+              <AlertTriangle className="h-4 w-4 mr-2 flex-shrink-0" />
+              <p>Insufficient funds in your wallet. Current balance: ${wallet.balance.toFixed(2)}</p>
+            </div>
+          )}
+
           <Button
             onClick={handleSchedulePickup}
-            disabled={!date || !selectedTimeSlot || isSubmitting}
-            className="w-full mt-4 bg-coffee hover:bg-coffee-dark text-white"
+            disabled={!date || !selectedTimeSlot || isSubmitting || insufficientFunds || cartTotal > wallet.balance}
+            className={cn(
+              "w-full mt-4",
+              cartTotal > wallet.balance
+                ? "bg-gray-300 hover:bg-gray-300 cursor-not-allowed"
+                : "bg-coffee hover:bg-coffee-dark text-white"
+            )}
           >
             {isSubmitting ? (
               <>
@@ -179,9 +200,16 @@ const PickupScheduler: React.FC = () => {
             ) : (
               <>
                 <Coffee className="mr-2 h-4 w-4" /> Schedule Pickup
+                {cartTotal > 0 && ` • $${cartTotal.toFixed(2)}`}
               </>
             )}
           </Button>
+          
+          {cartTotal > wallet.balance && !insufficientFunds && (
+            <div className="text-xs text-red-600 text-center">
+              Insufficient wallet balance. Add more funds before scheduling.
+            </div>
+          )}
         </motion.div>
 
         <motion.div
@@ -255,6 +283,18 @@ const PickupScheduler: React.FC = () => {
                 </div>
               </>
             )}
+          </div>
+          <div className="p-4 bg-cream-light/50 border-t border-cream-dark/10">
+            <div className="flex justify-between items-center mb-1">
+              <p className="text-sm font-medium text-coffee-dark">Wallet Balance</p>
+              <p className="text-sm font-medium">${wallet.balance.toFixed(2)}</p>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {wallet.balance < cartTotal ? 
+                <span className="text-red-600">Insufficient funds. Please add more to your wallet.</span> :
+                <span>You have enough funds to complete this order.</span>
+              }
+            </div>
           </div>
         </motion.div>
       </div>

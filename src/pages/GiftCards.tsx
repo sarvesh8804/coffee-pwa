@@ -1,5 +1,5 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useWallet } from '@/hooks/useWallet';
 import PageTransition from "@/components/PageTransition";
 import GiftCardItem from "@/components/GiftCardItem";
 import { motion } from "framer-motion";
@@ -44,6 +44,7 @@ const denominations = [25, 50, 75, 100];
 
 const GiftCards = () => {
   const { toast } = useToast();
+  const { balance: walletBalance } = useWallet();
   const [activeTab, setActiveTab] = useState("purchase");
   const [selectedDesign, setSelectedDesign] = useState(giftCardDesigns[0]);
   const [selectedAmount, setSelectedAmount] = useState(denominations[0]);
@@ -52,6 +53,7 @@ const GiftCards = () => {
   const [recipientEmail, setRecipientEmail] = useState("");
   const [message, setMessage] = useState("");
   const [redeemCode, setRedeemCode] = useState("");
+  const [insufficientFunds, setInsufficientFunds] = useState(false);
   
   const { 
     giftCards,
@@ -61,6 +63,11 @@ const GiftCards = () => {
     isRedeeming,
     isLoading 
   } = useGiftCards();
+
+  useEffect(() => {
+    const amount = customAmount ? parseFloat(customAmount) : selectedAmount;
+    setInsufficientFunds(amount > walletBalance);
+  }, [customAmount, selectedAmount, walletBalance]);
 
   const handlePurchase = async () => {
     if (!recipientName || !recipientEmail) {
@@ -72,10 +79,18 @@ const GiftCards = () => {
       return;
     }
 
+    const amount = customAmount ? parseFloat(customAmount) : selectedAmount;
+    
+    if (amount > walletBalance) {
+      toast({
+        title: "Insufficient funds",
+        description: "Please add more funds to your wallet",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      const amount = customAmount ? parseFloat(customAmount) : selectedAmount;
-      
-      // Call the createGiftCard mutation from useGiftCards
       createGiftCard({
         recipientEmail,
         amount,
@@ -83,7 +98,6 @@ const GiftCards = () => {
         design: selectedDesign.id,
       });
 
-      // Reset form after successful submission
       setSelectedDesign(giftCardDesigns[0]);
       setSelectedAmount(denominations[0]);
       setCustomAmount("");
@@ -329,6 +343,14 @@ const GiftCards = () => {
                       <div>
                         <div className="flex justify-between items-center mb-3">
                           <span className="text-sm text-muted-foreground">
+                            Wallet Balance
+                          </span>
+                          <span className={`font-medium ${insufficientFunds ? 'text-red-500' : ''}`}>
+                            ${walletBalance.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="text-sm text-muted-foreground">
                             Gift Card Amount
                           </span>
                           <span className="font-medium">
@@ -363,7 +385,8 @@ const GiftCards = () => {
                           isCreating ||
                           (!selectedAmount && !customAmount) ||
                           !recipientName ||
-                          !recipientEmail
+                          !recipientEmail ||
+                          insufficientFunds
                         }
                         className="w-full bg-coffee hover:bg-coffee-dark text-white"
                       >
@@ -375,6 +398,11 @@ const GiftCards = () => {
                           </>
                         )}
                       </Button>
+                      {insufficientFunds && (
+                        <div className="w-full mt-2 text-xs text-red-500 text-center">
+                          Insufficient funds in your wallet. Current balance: ${walletBalance.toFixed(2)}
+                        </div>
+                      )}
                     </CardFooter>
                   </Card>
                 </motion.div>

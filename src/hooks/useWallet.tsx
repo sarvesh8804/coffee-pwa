@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -29,17 +28,15 @@ export const useWallet = () => {
 
     if (error) throw error;
 
-    // Convert the data to the expected format with strict typing
     return data.map(tx => ({
       id: tx.id,
       amount: Number(tx.amount),
-      type: tx.type === 'reload' ? 'deposit' as const : 'payment' as const, // Ensure correct type mapping
+      type: tx.type === 'reload' ? 'deposit' as const : 'payment' as const,
       description: tx.description,
       date: new Date(tx.created_at)
     })) as WalletTransaction[];
   };
 
-  // Calculate balance from transactions
   const calculateBalance = (transactions: WalletTransaction[]) => {
     return transactions.reduce((total, tx) => {
       if (tx.type === 'deposit') {
@@ -50,17 +47,14 @@ export const useWallet = () => {
     }, 0);
   };
 
-  // Query for wallet transactions
   const { data: transactions = [], isLoading, error } = useQuery({
     queryKey: ['walletTransactions', user?.id],
     queryFn: fetchWalletTransactions,
     enabled: !!user,
   });
 
-  // Calculate current balance
   const balance = calculateBalance(transactions);
 
-  // Mutation to add funds - Fixed function signature and implementation
   const addFundsMutation = useMutation({
     mutationFn: async ({ amount, description = 'Wallet Reload' }: { amount: number, description?: string }) => {
       if (!user) throw new Error('User not authenticated');
@@ -68,7 +62,7 @@ export const useWallet = () => {
       const newTransaction = {
         user_id: user.id,
         amount: amount,
-        type: 'reload', // Using 'reload' in the database
+        type: 'reload',
         description: description
       };
       
@@ -98,14 +92,61 @@ export const useWallet = () => {
     }
   });
 
+  const makePaymentMutation = useMutation({
+    mutationFn: async ({ amount, description }: { amount: number, description: string }) => {
+      if (!user) throw new Error('User not authenticated');
+      
+      const currentTransactions = await fetchWalletTransactions();
+      const currentBalance = calculateBalance(currentTransactions);
+      
+      if (currentBalance < amount) {
+        throw new Error('Insufficient funds in wallet');
+      }
+      
+      const newTransaction = {
+        user_id: user.id,
+        amount: amount,
+        type: 'payment',
+        description: description
+      };
+      
+      const { data, error } = await supabase
+        .from('wallet_transactions')
+        .insert(newTransaction)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['walletTransactions', user?.id] });
+      toast({
+        title: "Payment Successful",
+        description: "Your payment has been processed successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Payment Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  });
+
   return {
     balance,
     transactions,
     isLoading,
     error,
-    // Updated function signature to match the mutation
     addFunds: (amount: number, description?: string) => 
       addFundsMutation.mutate({ amount, description }),
-    isAddingFunds: addFundsMutation.isPending
+    isAddingFunds: addFundsMutation.isPending,
+    makePayment: (amount: number, description: string) => 
+      makePaymentMutation.mutate({ amount, description }),
+    isProcessingPayment: makePaymentMutation.isPending
   };
 };
