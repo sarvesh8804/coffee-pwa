@@ -60,9 +60,9 @@ export const useWallet = () => {
   // Calculate current balance
   const balance = calculateBalance(transactions);
 
-  // Mutation to add funds
+  // Mutation to add funds - Fixed function signature and implementation
   const addFundsMutation = useMutation({
-    mutationFn: async (amount: number, description: string = 'Wallet Reload') => {
+    mutationFn: async ({ amount, description = 'Wallet Reload' }: { amount: number, description?: string }) => {
       if (!user) throw new Error('User not authenticated');
       
       const newTransaction = {
@@ -103,7 +103,9 @@ export const useWallet = () => {
     transactions,
     isLoading,
     error,
-    addFunds: (amount: number, description?: string) => addFundsMutation.mutate(amount, description),
+    // Updated function signature to match the mutation
+    addFunds: (amount: number, description?: string) => 
+      addFundsMutation.mutate({ amount, description }),
     isAddingFunds: addFundsMutation.isPending
   };
 };
